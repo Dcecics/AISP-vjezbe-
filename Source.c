@@ -7,203 +7,144 @@
 struct node;
 typedef struct node* Position;
 struct node {
-	int koef;
-	int eksp;
+	int element;
 	Position next;
 };
-int readPolynom(Position);
-int sumaPolynom(Position, Position, Position);
-int MulPolynom(Position, Position, Position);
+int readFromFile(Position);
+int presjek(Position, Position, Position);
 int printList(Position);
+int unija(Position, Position, Position);
 int deletAll(Position);
 int main() {
+
 	struct node head1;
 	struct node head2;
-	struct node headSuma;
-	struct node headMultiple;
+	struct node headPresjek;
+	struct node headUnija;
 	int result = 0;
 	head1.next = NULL;
 	head2.next = NULL;
-	headSuma.next = NULL;
-	headMultiple.next = NULL;
-	result = readPolynom(&head1);
+	headPresjek.next = NULL;
+	headUnija.next = NULL;
+	result = readFromFile(&head1);
 	if (result == 1) {
-		printf("Datoteka nije otvorena!\n");
+		printf("Error datoteka nije otvorena!\n");
 		return 0;
 	}
 	else if (result == -1) {
-		printf("Greska pri alokaciji memorije!\n");
+		printf("Error memorija nije alocirana!\n");
 		deletAll(&head1);
 		return 0;
 	}
 	else {
 		printf("Sve je proslo u redu!\n");
 	}
-	result = readPolynom(&head2);
-	if (result == 1) {
-		printf("Datoteka nije otvorena!\n");
-		return 0;
-	}
-	else if (result == -1) {
-		printf("Greska pri alokaciji memorije!\n");
-		deletAll(&head2);
-		return 0;
-	}
-	else {
-		printf("Sve je proslo u redu!\n");
-	}
-	printf("Prvi polinom:\t");
+	printf("Lista1:\t");
 	printList(head1.next);
-	printf("Drugi polinom:\t");
+	result = readFromFile(&head2);
+	if (result == 1) {
+		printf("Error memorija nije alocirana!\n");
+		deletAll(&head1);
+		return 0;
+	}
+	else if (result == -1) {
+		printf("Error memorija nije alocirana!\n");
+		deletAll(&head1);
+		deletAll(&head2);
+		return 0;
+	}
+	else {
+		printf("Sve je proslo u redu!\n");
+	}
+	printf("Lista2:\t");
 	printList(head2.next);
-	result = sumaPolynom(head1.next, head2.next, &headSuma);
-	if (result == -1) {
-		printf("Greska pri alokaciji memorije!\n");
+	result = presjek(head1.next, head2.next, &headPresjek);
+	if (result == -2) {
+		printf("Error memorija nije alocirana!\n");
 		deletAll(&head1);
-		deletAll(&head2);
-		deletAll(&headSuma);
+		deletAll(&head1);
+		deletAll(&headPresjek);
 		return 0;
 	}
 	else {
 		printf("Sve je proslo u redu!\n");
 	}
-	printf("Suma polinoma:\t");
-	printList(headSuma.next);
-	result = MulPolynom(head1.next, head2.next, &headMultiple);
-	if (result == -1) {
-		printf("Greska pri alokaciji memorije!\n");
+	printf("Presjek:");
+	printList(headPresjek.next);
+	result = unija(head1.next, head2.next, &headUnija);
+	if (result == -2) {
+		printf("Error memorija nije alocirana!\n");
 		deletAll(&head1);
-		deletAll(&head2);
-		deletAll(&headMultiple);
+		deletAll(&head1);
+		deletAll(&headUnija);
 		return 0;
 	}
 	else {
 		printf("Sve je proslo u redu!\n");
 	}
-	printf("Produkt polinoma:");
-	printList(headMultiple.next);
-
+	printf("Unija:\t");
+	printList(headUnija.next);
 	deletAll(&head1);
 	deletAll(&head2);
-	deletAll(&headSuma);
-	deletAll(&headMultiple);
-	printList(headMultiple.next);
-	printList(headSuma.next);
+	deletAll(&headPresjek);
+	deletAll(&headUnija);
+	printList(headPresjek.next);
+	printList(headUnija.next);
 	printList(head1.next);
 	printList(head2.next);
 	return 0;
 }
-int readPolynom(Position P) {
+int readFromFile(Position P) {
 	FILE* fp = NULL;
 	char fileName[128] = "\0";
 	Position q = NULL;
-
-	printf("Upisi ime datoteke:\n");
+	printf("Upisite ime datoteke:\n");
 	scanf(" %s", fileName);
 	fp = fopen(fileName, "r");
 	if (fp == NULL) {
-		printf("Datoteka nije otvorena!\n");
+		printf("Datoteka nije pronadena!!\n");
 		return 1;
 	}
-	int koef, eksp;
-	while (fscanf(fp, "%d %d", &koef, &eksp) == 2) {
+	while (!feof(fp)) {
 		q = (Position)malloc(sizeof(struct node));
 		if (q == NULL) {
-			printf("Greška pri alokaciji memorije!\n");
+			printf("Alokacija nije uspijela!!\n");
 			fclose(fp);
 			return -1;
 		}
 
-		// Postavljanje vrednosti 
-		q->koef = koef;
-		q->eksp = eksp;
-
-		// Umetanje elementa u sortiranu listu
-		while (P->next != NULL && P->next->eksp > q->eksp) {
+		while (P->next != NULL) {
 			P = P->next;
 		}
-
+		fscanf(fp, "%d", &q->element);
 		q->next = P->next;
 		P->next = q;
 	}
 	fclose(fp);
 	return 0;
 }
-int sumaPolynom(Position P1, Position P2, Position Suma) {
+int presjek(Position L1, Position L2, Position P) {
 	Position q = NULL;
-	while (P1 != NULL || P2 != NULL)
+	while (L1 != NULL && L2 != NULL)
 	{
-		q = (Position)malloc(sizeof(struct node));
-		if (q == NULL) {
-			printf("Greska pri alokaciji memorije!\n");
-			return -1;
-		}
-
-		if (P1 == NULL) {  // Ako je prvi polinom prazan, preuzmi element iz drugog polinoma
-			q->eksp = P2->eksp;
-			q->koef = P2->koef;
-			P2 = P2->next;
-		}
-		else if (P2 == NULL) {
-			q->eksp = P1->eksp;
-			q->koef = P1->koef;
-			P1 = P1->next;
-		}
-		else if (P1->eksp > P2->eksp) {   // Ako je eksponent iz prvog polinoma veæi, dodaj taj element u sumu
-			q->eksp = P1->eksp;
-			q->koef = P1->koef;
-			P1 = P1->next;
-		}
-		else if (P1->eksp < P2->eksp) {
-			q->eksp = P2->eksp;
-			q->koef = P2->koef;
-			P2 = P2->next;
-		}
-		else {   // Ako su eksponenti jednaki, zbroji koeficijente
-			q->eksp = P1->eksp;
-			q->koef = P1->koef + P2->koef;
-			P1 = P1->next;
-			P2 = P2->next;
-		}
-
-		q->next = Suma->next;
-		Suma->next = q;
-		Suma = q;  // Pokazivaè Suma  pomakni na kraj nove liste
-
-	}
-
-	return 0;
-}
-int MulPolynom(Position P1, Position P2, Position multiple) {
-	Position q = NULL, i = NULL, j = NULL, tmp = NULL;
-	int eksp = 0;
-	int koef = 0;
-	
-	for (i = P1; i != NULL; i = i->next) {
-		for (j = P2; j != NULL; j = j->next) {
-			eksp = i->eksp + j->eksp;
-			koef = i->koef * j->koef;
-
-			tmp = multiple;
-			while (tmp->next != NULL && tmp->next->eksp > eksp) {
-				tmp = tmp->next;
+		if (L1->element == L2->element) {
+			q = (Position)malloc(sizeof(struct node));
+			if (q == NULL) {
+				printf("Alokacija nije uspijela!!\n");
+				return -1;
 			}
-			// Ako je eksponent veæ prisutan u rezultatu, samo zbrojimo koeficijente
-			if (tmp->next != NULL && tmp->next->eksp == eksp) {
-				tmp->next->koef += koef;
-			}
-			else {
-				// Ako eksponent nije prisutan, stvaramo novi èvor
-				q = (Position)malloc(sizeof(struct node));
-				if (q == NULL) {
-					printf("Greska pri alokaciji memorije!\n");
-					return -1;
-				}
-				q->eksp = eksp;
-				q->koef = koef;
-				q->next = tmp->next;
-				tmp->next = q;
-			}
+			q->element = L1->element;   // Uzimamo element iz L1 (ili L2, jer su jednaki)
+			q->next = P->next;          // Novi èvor pokazuje na trenutni presjek
+			P->next = q;                // Glava presjeka pokazuje na novi èvor
+			P = P->next;
+			L1 = L1->next;
+			L2 = L2->next;              //sve tri liste se pomicu na sljedeci
+		}
+		else if (L1->element > L2->element) {
+			L2 = L2->next;              //l2 je manji i ide dalje(liste su sortirane)
+		}
+		else if (L1->element < L2->element) {
+			L1 = L1->next;              //isto kao i za l2
 		}
 	}
 	return 0;
@@ -214,26 +155,59 @@ int printList(Position P) {
 		return 0;
 	}
 	while (P != NULL) {
-		
-		if (P->koef > 0) {
-			printf("+%dx^%d ", P->koef, P->eksp);
-		}
-		else {
-			printf("%dx^%d ", P->koef, P->eksp);
-		}
+		printf(" %d\t", P->element);
 		P = P->next;
 	}
 	printf("\n");
 	return 0;
 }
+int unija(Position L1, Position L2, Position U) {
+	Position q = NULL;
+	while (L1 != NULL || L2 != NULL)
+	{
+		q = (Position)malloc(sizeof(struct node));
+		if (q == NULL) {
+			printf("Alokacija nije uspijela!!\n");
+			return -1;
+		}
+		if (L1 == NULL) {             //lista l1 je prazna svi preostali elementi l2 se dodaju u uniju
+			q->element = L2->element;
+			L2 = L2->next;
+		}
+		else if (L2 == NULL) {
+			q->element = L1->element;
+			L1 = L1->next;
+		}
+		else
+		{
+			if (L1->element > L2->element) {    //ako su l1 i l2 razlicite manji element se dodaje u uniju
+				q->element = L2->element;
+				L2 = L2->next;
+			}
+			else if (L1->element < L2->element) {
+				q->element = L1->element;
+				L1 = L1->next;
+			}
+			else {                     //elementi su jednaki, dodaje se samo jedan od njih i oba pokazivaca se pomicu
+				q->element = L1->element;
+				L1 = L1->next;
+				L2 = L2->next;
+			}
+		}
+		q->next = U->next;
+		U->next = q;
+		U = U->next;       //pomicemo se na sljedeci da se novi element doda iza ovog kojeg smo vec upisali
+	}
+	return 0;
+}
 int deletAll(Position P) {
 	Position temp = NULL;
-
-	while (P->next != NULL) {
+	while (P->next != NULL)
+	{
 		temp = P->next;
 		P->next = temp->next;
 		free(temp);
-	}
 
+	}
 	return 0;
 }
