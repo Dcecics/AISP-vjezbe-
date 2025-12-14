@@ -2,146 +2,182 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <string.h>
-#define MAX 100
+#define MAX_PRIORITY 15
 #define MIN 10
+#define MAX 100
+
 struct node;
 typedef struct node* Position;
-struct node {
-	int element;
-	Position next;
-};
 
-int PushStack(Position, int);
-int PushQueue(Position, int);
-int Pop(Position);
-int getRandom();
+typedef struct node {
+    int element;
+    int priority;
+    Position next;
+} Node;
+
+int PushCircularStack(Position, int, int*, int);
+int PopCircularStack(Position, int*);
+int PushPriorityQueue(Position, int, int);
+int PopPriorityQueue(Position);
 int Print(Position);
-int deletAll(Position);
+int DeleteAll(Position);
+int GetRandom();
 
 int main() {
+    struct node headStack;
+    struct node headQueue;
+    int maxStackSize = 0, stackSize = 0;
+    int result = 0, choice = 0;
 
-	struct node headStack;
-	struct node headQueue;
-	int resualt = 0, choice = 0;
-	headQueue.next = NULL;
-	headStack.next = NULL;
-	printf("Unesite sto zelite raditi:\n1.Push na stog\n2.Pop iz stog\n3.Ispisi stog\n4.Ispisi red\n5.Push na red\n6.Pop iz reda\n");
-	do {
-		printf("Unesi 1,2,3,4,5 ili 6\n");
-		scanf(" %d", &choice);
-		if (choice < 1 || choice > 6) {
-			printf(" Netocan unos!!!\n");
-		}
-		else
-		{
-			switch (choice) {
-			case 1:
-				resualt = PushStack(&headStack, getRandom());
-				if (resualt == -1) {
-					printf(" Greska.\n");
-				}
-				else {
-					printf(" Sve je proslo u redu.\n");
-				}
-				break;
-			case 2:
-				resualt = Pop(&headStack);
-				break;
-			case 3:
-				printf("Stog je:");
-				Print(headStack.next);
-				break;
-			case 4:
-				printf("Red je:");
-				Print(headQueue.next);
-				break;
-			case 5:
-				resualt = PushQueue(&headQueue, getRandom());
-				if (resualt == -1) {
-					printf(" Greska.\n");
-				}
-				else {
-					printf(" Sve je proslo u redu.\n");
-				}
-				break;
-			case 6:
-				resualt = Pop(&headQueue);
-				break;
-			}
-		}
-		printf("Ako zelite stati unesite 1, ako zelite nastaviti unesite 0!\n");
-		scanf(" %d", &choice);
-	} while (choice != 1);
-	deletAll(&headStack);
-	deletAll(&headQueue);
-	return 0;
+    headStack.next = &headStack;  // Circular stack initialization
+    headQueue.next = NULL;       // Priority queue initialization
+
+    srand((unsigned)time(NULL)); // Initialize random seed
+
+    printf("Unesite maksimalnu velicinu stoga: ");
+    scanf("%d", &maxStackSize);
+
+    do {
+        printf("\nOdaberite opciju:\n");
+        printf("1. Push na cirkularni stog\n");
+        printf("2. Pop iz cirkularnog stoga\n");
+        printf("3. Ispis cirkularnog stoga\n");
+        printf("4. Push na red s prioritetom\n");
+        printf("5. Pop iz reda s prioritetom\n");
+        printf("6. Ispis reda s prioritetom\n");
+        printf("7. Izlaz\n");
+        scanf("%d", &choice);
+
+        switch (choice) {
+        case 1:
+            result = PushCircularStack(&headStack, GetRandom(), &stackSize, maxStackSize);
+            if (result == -1) printf("Stog je pun!\n");
+            else printf("Element dodan u stog.\n");
+            break;
+        case 2:
+            result = PopCircularStack(&headStack, &stackSize);
+            if (result == -1) printf("Stog je prazan!\n");
+            break;
+        case 3:
+            printf("Cirkularni stog: ");
+            Print(headStack.next);
+            break;
+        case 4:
+            result = PushPriorityQueue(&headQueue, GetRandom(), rand() % MAX_PRIORITY + 1);
+            if (result == -1) printf("Greska pri dodavanju u red!\n");
+            else printf("Element dodan u red.\n");
+            break;
+        case 5:
+            result = PopPriorityQueue(&headQueue);
+            if (result == -1) printf("Red je prazan!\n");
+            break;
+        case 6:
+            printf("Red s prioritetom: ");
+            Print(headQueue.next);
+            break;
+        case 7:
+            printf("Izlaz iz programa.\n");
+            break;
+        default:
+            printf("Pogresan unos, pokusajte ponovo.\n");
+        }
+
+    } while (choice != 7);
+
+    DeleteAll(&headStack);
+    DeleteAll(&headQueue);
+
+    return 0;
 }
-int getRandom() {
-	int value = 0;
-	//srand((unsigned)time(NULL));
-	value = rand() % ((MAX - MIN + 1) + MIN);
-	return value;
+
+int GetRandom() {
+    return rand() % (MAX - MIN + 1) + MIN;
 }
-int PushStack(Position P, int value) {
-	Position temp;
-	temp = (Position)malloc(sizeof(struct node));
-	if (temp == NULL) {
-		printf("Alokacija nije uspijela!!");
-		return -1;
-	}
-	temp->element = value;
-	temp->next = P->next;
-	P->next = temp;
-	return 0;
+
+int PushCircularStack(Position P, int value, int* stackSize, int maxStackSize) {
+    if (*stackSize >= maxStackSize) return -1; // Stack is full
+
+    Position temp = (Position)malloc(sizeof(Node));
+    if (!temp) {
+        printf("Alokacija nije uspijela!\n");
+        return -1;
+    }
+
+    temp->element = value;
+    temp->next = P->next;
+    P->next = temp;
+    (*stackSize)++;
+
+    return 0;
 }
-int Pop(Position P) {
-	Position temp = NULL;
-	if (P->next != NULL) {
-		temp = P->next;
-		P->next = temp->next;
-		printf("Izbrisana vrijednost je %d\n", temp->element);
-		free(temp);
-	}
-	return 0;
+
+int PopCircularStack(Position P, int* stackSize) {
+    if (*stackSize == 0) return -1; // Stack is empty
+
+    Position temp = P->next;
+    P->next = temp->next;
+    printf("Izbacen element: %d\n", temp->element);
+    free(temp);
+    (*stackSize)--;
+
+    return 0;
 }
+
+int PushPriorityQueue(Position P, int value, int priority) {
+    Position temp = (Position)malloc(sizeof(Node));
+    if (!temp) {
+        printf("Alokacija nije uspijela!\n");
+        return -1;
+    }
+
+    temp->element = value;
+    temp->priority = priority;
+
+    while (P->next != NULL && P->next->priority >= priority) {
+        P = P->next;
+    }
+
+    temp->next = P->next;
+    P->next = temp;
+
+    return 0;
+}
+
+int PopPriorityQueue(Position P) {
+    if (!P->next) return -1; // Queue is empty
+
+    Position temp = P->next;
+    P->next = temp->next;
+    printf("Izbacen element: %d (prioritet: %d)\n", temp->element, temp->priority);
+    free(temp);
+
+    return 0;
+}
+
 int Print(Position P) {
-	if (P == NULL) {
-		printf("Prazna lista\n");
-		return 0;
-	}
-	while (P != NULL) {
-		printf(" %d ", P->element);
-		P = P->next;
-	}
-	printf("\n");
-	return 0;
-}
-int PushQueue(Position  P, int value) {
-	static Position last = NULL;
-	Position temp = NULL;
-	if (last == NULL) {
-		last = P;
-	}
-	temp = (Position)malloc(sizeof(struct node));
-	if (temp == NULL) {
-		printf("Alokacija nije uspijela!!");
-		return -1;
-	}
-	temp->element = value;
-	temp->next = last->next;
-	last->next = temp;
-	last = last->next;
-	return 0;
-}
-int deletAll(Position P) {
-	Position temp = NULL;
-	while (P->next != NULL)
-	{
-		temp = P->next;
-		P->next = temp->next;
-		free(temp);
+    if (P == NULL) {
+        printf("Prazna lista\n");
+        return 0;
+    }
 
-	}
-	return 0;
+    while (P != NULL) {
+        printf("%d ", P->element);
+        if (P->priority) {
+            printf("(prioritet: %d) ", P->priority);
+        }
+        P = P->next;
+    }
+
+    printf("\n");
+    return 0;
+}
+
+int DeleteAll(Position P) {
+    Position temp;
+    while (P->next) {
+        temp = P->next;
+        P->next = temp->next;
+        free(temp);
+    }
+    return 0;
 }
