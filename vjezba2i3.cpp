@@ -55,7 +55,6 @@ int main() {
 		printf("10. Citaj listu iz datoteke\n");
 		printf("11. Izbrisi cijelu listu\n");
 		printf("12. Izlaz\n");
-		printf("#########################################################\n");
 		printf("Unesite izbor\n");
 		scanf(" %d", &choice);
 
@@ -330,4 +329,5 @@ int deleteAll(Position P) {
 		free(temp);
 	}
 	return 0;
+
 }
