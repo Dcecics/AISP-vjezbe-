@@ -27,6 +27,7 @@ int main() {
     struct cvor glavaRed = { 0, NULL };
     Pozicija zadnjiRed = NULL;
     int izbor = 0;
+    int rezultat = 0;
 
     srand((unsigned)time(NULL));
 
@@ -35,27 +36,46 @@ int main() {
         scanf("%d", &izbor);
 
         switch (izbor) {
+
         case 1:
-            pushStog(&glavaStog, slucajniBroj());
+            rezultat = pushStog(&glavaStog, slucajniBroj());
+            if (rezultat == -1)
+                printf("Greska pri alokaciji memorije!\n");
             break;
+
         case 2:
-            popStog(&glavaStog);
+            rezultat = popStog(&glavaStog);
+            if (rezultat == -1)
+                printf("Stog je prazan!\n");
             break;
+
         case 3:
             ispis(glavaStog.sljedeci);
             break;
+
         case 4:
             ispis(glavaRed.sljedeci);
             break;
+
         case 5:
-            pushRed(&glavaRed, &zadnjiRed, slucajniBroj());
+            rezultat = pushRed(&glavaRed, &zadnjiRed, slucajniBroj());
+            if (rezultat == -1)
+                printf("Greska pri alokaciji memorije!\n");
             break;
+
         case 6:
-            popRed(&glavaRed, &zadnjiRed);
+            rezultat = popRed(&glavaRed, &zadnjiRed);
+            if (rezultat == -1)
+                printf("Red je prazan!\n");
             break;
+
+        default:
+            printf("Nepostojeca opcija!\n");
         }
+
         printf("0 nastavi, 1 izlaz: ");
         scanf("%d", &izbor);
+
     } while (izbor == 0);
 
     obrisiSve(&glavaStog);
@@ -69,8 +89,9 @@ int slucajniBroj(void) {
 }
 
 int pushStog(Pozicija glava, int vrijednost) {
-    Pozicija novi = malloc(sizeof(struct cvor));
-    if (!novi) return -1;
+    Pozicija novi = (Pozicija)malloc(sizeof(struct cvor));
+    if (!novi)
+        return -1;
 
     novi->element = vrijednost;
     novi->sljedeci = glava->sljedeci;
@@ -80,10 +101,10 @@ int pushStog(Pozicija glava, int vrijednost) {
 
 int popStog(Pozicija glava) {
     Pozicija temp;
-    if (!glava->sljedeci) {
-        printf("Stog je prazan\n");
+
+    if (!glava->sljedeci)
         return -1;
-    }
+
     temp = glava->sljedeci;
     glava->sljedeci = temp->sljedeci;
     printf("Uklonjeno: %d\n", temp->element);
@@ -92,18 +113,17 @@ int popStog(Pozicija glava) {
 }
 
 int pushRed(Pozicija glava, Pozicija* zadnji, int vrijednost) {
-    Pozicija novi = malloc(sizeof(struct cvor));
-    if (!novi) return -1;
+    Pozicija novi = (Pozicija)malloc(sizeof(struct cvor));
+    if (!novi)
+        return -1;
 
     novi->element = vrijednost;
     novi->sljedeci = NULL;
 
-    if (!glava->sljedeci) {
+    if (!glava->sljedeci)
         glava->sljedeci = novi;
-    }
-    else {
+    else
         (*zadnji)->sljedeci = novi;
-    }
 
     *zadnji = novi;
     return 0;
@@ -111,10 +131,9 @@ int pushRed(Pozicija glava, Pozicija* zadnji, int vrijednost) {
 
 int popRed(Pozicija glava, Pozicija* zadnji) {
     Pozicija temp;
-    if (!glava->sljedeci) {
-        printf("Red je prazan\n");
+
+    if (!glava->sljedeci)
         return -1;
-    }
 
     temp = glava->sljedeci;
     glava->sljedeci = temp->sljedeci;
@@ -150,3 +169,4 @@ int obrisiSve(Pozicija glava) {
     }
     return 0;
 }
+
