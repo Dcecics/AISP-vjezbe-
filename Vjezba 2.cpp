@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-//dodala san errore
 #define OK             0
 #define ERR_ALLOC      1
 #define ERR_INPUT      2
