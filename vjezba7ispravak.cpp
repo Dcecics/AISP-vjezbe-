@@ -3,172 +3,324 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MIN 10
-#define MAX 100
+#define OK             0
+#define ERR_ALLOC      1
+#define ERR_EMPTY      2
+#define ERR_INPUT      3
+#define ERR_FULL       4
 
-struct cvor;
-typedef struct cvor* Pozicija;
+typedef struct Stog {
+    int elem;
+    struct Stog* next;
+} Stog;
 
-struct cvor {
-    int element;
+typedef struct Red {
+    int elem;
     int prioritet;
-    Pozicija sljedeci;
-};
+    struct Red* next;
+} Red;
 
-int slucajniBroj(void);
-int pushCirkularniStog(Pozicija glava, int vrijednost, int* velicina, int max);
-int popCirkularniStog(Pozicija glava, int* velicina);
-int pushRedPrioritet(Pozicija glava, int vrijednost, int prioritet);
-int popRedPrioritet(Pozicija glava);
-int ispisCirkularniStog(Pozicija glava);
-int ispis(Pozicija prvi);
-void obrisiCirkularniStog(Pozicija glava);
-void obrisiSve(Pozicija glava);
+int velicinaStoga(Stog* head) {
+    if (head == NULL) return 0;
 
-int main() {
-    struct cvor glavaStog;
-    struct cvor glavaRed;
-    int maxStog = 0, velicinaStog = 0;
-    int izbor = 0;
+    int brojac = 1;
+    Stog* temp = head;
+    while (temp->next != head) {
+        brojac++;
+        temp = temp->next;
+    }
+    return brojac;
+}
 
-    glavaStog.sljedeci = &glavaStog;
-    glavaRed.sljedeci = NULL;
+int Push(Stog** head, int maxVelicina, int* outDodani, int* outObrisani, int* obrisanoFlag) {
+    *obrisanoFlag = 0;
+    if (maxVelicina <= 0) return ERR_INPUT;
 
+    int slucBr = rand() % 91 + 10;
+
+    Stog* novi = (Stog*)malloc(sizeof(Stog));
+    if (novi == NULL) return ERR_ALLOC;
+
+    novi->elem = slucBr;
+
+    if (*head == NULL) {
+        novi->next = novi;
+        *head = novi;
+        if (outDodani) *outDodani = slucBr;
+        return OK;
+    }
+
+    int trenutnaVelicina = velicinaStoga(*head);
+
+    if (trenutnaVelicina >= maxVelicina) {
+        Stog* temp = *head;
+        Stog* prev = NULL;
+
+        while (temp->next != *head) {
+            prev = temp;
+            temp = temp->next;
+        }
+
+        if (outObrisani) *outObrisani = temp->elem;
+        *obrisanoFlag = 1;
+
+        if (temp == *head) {
+            free(temp);
+            novi->next = novi;
+            *head = novi;
+        }
+        else {
+            //izbaci zadnji ubaci novi ka heaad
+            prev->next = *head;      //predzadnji sad pokazuje na head
+            novi->next = *head;
+
+            //zadnji pokazuje na novi
+            prev->next = novi;
+
+            //oslobadan stari zadnji
+            free(temp);
+            *head = novi;
+        }
+    }
+    else {
+        //novi postaje head zadnji pokazuje na novog
+        Stog* zadnji = *head;
+        while (zadnji->next != *head) {
+            zadnji = zadnji->next;
+        }
+        novi->next = *head;
+        zadnji->next = novi;
+        *head = novi;
+    }
+
+    if (outDodani) *outDodani = slucBr;
+    return OK;
+}
+
+int Pop(Stog** head, int* outVrijednost) {
+    if (*head == NULL) return ERR_EMPTY;
+
+    Stog* temp = *head;
+    int vrijednost = temp->elem;
+
+    if (temp->next == temp) {
+        free(temp);
+        *head = NULL;
+        if (outVrijednost) *outVrijednost = vrijednost;
+        return OK;
+    }
+
+    Stog* zadnji = *head;
+    while (zadnji->next != *head) {
+        zadnji = zadnji->next;
+    }
+
+    *head = temp->next;
+    zadnji->next = *head;
+    free(temp);
+
+    if (outVrijednost) *outVrijednost = vrijednost;
+    return OK;
+}
+
+int ispisStoga(Stog* head) {
+    if (head == NULL) {
+        printf("Stog je prazan\n");
+        return ERR_EMPTY;
+    }
+
+    printf("Stog: ");
+    Stog* temp = head;
+    do {
+        printf("%d ", temp->elem);
+        temp = temp->next;
+    } while (temp != head);
+    printf("\n");
+    return OK;
+}
+
+void obrisiStog(Stog* head) {
+    if (head == NULL) return;
+
+    Stog* temp = head->next;
+    while (temp != head) {
+        Stog* next = temp->next;
+        free(temp);
+        temp = next;
+    }
+    free(head);
+}
+
+int Enqueue(Red** head, int* outElem, int* outPrioritet) {
+    int slucBr = rand() % 91 + 10;
+    int slucPrioritet = rand() % 5 + 1;
+
+    Red* novi = (Red*)malloc(sizeof(Red));
+    if (novi == NULL) return ERR_ALLOC;
+
+    novi->elem = slucBr;
+    novi->prioritet = slucPrioritet;
+    novi->next = NULL;
+
+    if (*head == NULL || (*head)->prioritet < slucPrioritet) {
+        novi->next = *head;
+        *head = novi;
+    }
+    else {
+        Red* temp = *head;
+        while (temp->next != NULL && temp->next->prioritet >= slucPrioritet) {
+            temp = temp->next;
+        }
+        novi->next = temp->next;
+        temp->next = novi;
+    }
+
+    if (outElem) *outElem = slucBr;
+    if (outPrioritet) *outPrioritet = slucPrioritet;
+    return OK;
+}
+
+int Dequeue(Red** head, int* outElem, int* outPrioritet) {
+    if (*head == NULL) return ERR_EMPTY;
+
+    Red* temp = *head;
+    *head = temp->next;
+
+    if (outElem) *outElem = temp->elem;
+    if (outPrioritet) *outPrioritet = temp->prioritet;
+
+    free(temp);
+    return OK;
+}
+
+int ispisReda(Red* head) {
+    if (head == NULL) {
+        printf("Red prazan\n");
+        return ERR_EMPTY;
+    }
+
+    printf("Red: ");
+    while (head) {
+        printf("%d(P:%d) ", head->elem, head->prioritet);
+        head = head->next;
+    }
+    printf("\n");
+    return OK;
+}
+
+void obrisiRed(Red* head) {
+    while (head) {
+        Red* next = head->next;
+        free(head);
+        head = next;
+    }
+}
+
+int main(void) {
     srand((unsigned)time(NULL));
 
-    printf("Unesite maksimalnu velicinu stoga: ");
-    scanf("%d", &maxStog);
+    Stog* stog = NULL;
+    Red* red = NULL;
+
+    int unos = 0;
+    int maxVelicina = 0;
+
+    printf("Unesite max vel cirk stoga: ");
+    if (scanf("%d", &maxVelicina) != 1) {
+        printf("Krivi unos\n");
+        return ERR_INPUT;
+    }
+    if (maxVelicina <= 0) {
+        printf("Mora bit veca od 0\n");
+        return ERR_INPUT;
+    }
 
     do {
-        printf("\n1 Push cirkularni stog\n2 Pop cirkularni stog\n3 Ispis cirkularni stog\n");
-        printf("4 Push red s prioritetom\n5 Pop red s prioritetom\n6 Ispis red s prioritetom\n7 Izlaz\n");
-        scanf("%d", &izbor);
+        printf("\nCIRKULARNI STOG:\n");
+        printf("1 - PUSH\n");
+        printf("2 - POP\n");
+        printf("3 - Ispis stoga\n");
+        printf("RED S PRIORITETOM:\n");
+        printf("4 - ENQUEUE\n");
+        printf("5 - DEQUEUE\n");
+        printf("6 - Ispis reda\n");
+        printf("0 - Izlaz\n");
+        printf("Izbor: ");
 
-        switch (izbor) {
-        case 1:
-            if (pushCirkularniStog(&glavaStog, slucajniBroj(), &velicinaStog, maxStog))
-                printf("Stog je pun\n");
+        if (scanf("%d", &unos) != 1) {
+            printf("Krivi unos\n");
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
+
+        int st = OK;
+
+        switch (unos) {
+        case 0:
+            printf("Izlaz\n");
             break;
-        case 2:
-            if (popCirkularniStog(&glavaStog, &velicinaStog))
-                printf("Stog je prazan\n");
-            break;
-        case 3:
-            ispisCirkularniStog(&glavaStog);
-            break;
-        case 4:
-            pushRedPrioritet(&glavaRed, slucajniBroj(), rand() % 5 + 1);
-            break;
-        case 5:
-            if (popRedPrioritet(&glavaRed))
-                printf("Red je prazan\n");
-            break;
-        case 6:
-            ispis(glavaRed.sljedeci);
+
+        case 1: {
+            int dodan = 0, obrisan = 0, obrisano = 0;
+            st = Push(&stog, maxVelicina, &dodan, &obrisan, &obrisano);
+            if (st == OK) {
+                printf("PUSH: %d\n", dodan);
+                if (obrisano) printf("Obrisan najstariji: %d\n", obrisan);
+            }
+            else if (st == ERR_ALLOC) {
+                printf("Greska u alokaciji memorije\n");
+                obrisiStog(stog);
+                obrisiRed(red);
+                return ERR_ALLOC;
+            }
             break;
         }
-    } while (izbor != 7);
+        case 2: {
+            int x = 0;
+            st = Pop(&stog, &x);
+            if (st == OK) printf("POP: %d\n", x);
+            else printf("Stog prazan\n");
+            break;
+        }
 
-    obrisiCirkularniStog(&glavaStog);
-    obrisiSve(&glavaRed);
+        case 3:
+            ispisStoga(stog);
+            break;
 
+        case 4: {
+            int e = 0, p = 0;
+            st = Enqueue(&red, &e, &p);
+            if (st == OK) printf("ENQUEUE: %d (P:%d)\n", e, p);
+            else if (st == ERR_ALLOC) {
+                printf("Greska u alokaciji memorije\n");
+                obrisiStog(stog);
+                obrisiRed(red);
+                return ERR_ALLOC;
+            }
+            break;
+        }
+
+        case 5: { 
+            int e = 0, p = 0;
+            st = Dequeue(&red, &e, &p);
+            if (st == OK) printf("DEQUEUE: %d (P:%d)\n", e, p);
+            else printf("Red je prazan\n");
+            break;
+        }
+
+        case 6:
+            ispisReda(red);
+            break;
+
+        default:
+            printf("NE MOZE\n");
+            break;
+        }
+
+    } while (unos != 0);
+
+    obrisiStog(stog);
+    obrisiRed(red);
     return 0;
-}
-
-int slucajniBroj(void) {
-    return rand() % (MAX - MIN + 1) + MIN;
-}
-
-int pushCirkularniStog(Pozicija glava, int vrijednost, int* velicina, int max) {
-    if (*velicina >= max) return -1;
-
-    Pozicija novi = malloc(sizeof(struct cvor));
-    if (!novi) return -1;
-
-    novi->element = vrijednost;
-    novi->sljedeci = glava->sljedeci;
-    glava->sljedeci = novi;
-    (*velicina)++;
-    return 0;
-}
-
-int popCirkularniStog(Pozicija glava, int* velicina) {
-    if (*velicina == 0) return -1;
-
-    Pozicija temp = glava->sljedeci;
-    glava->sljedeci = temp->sljedeci;
-    printf("Uklonjeno: %d\n", temp->element);
-    free(temp);
-    (*velicina)--;
-    return 0;
-}
-
-int ispisCirkularniStog(Pozicija glava) {
-    if (glava->sljedeci == glava) {
-        printf("Stog je prazan\n");
-        return 0;
-    }
-
-    Pozicija p = glava->sljedeci;
-    while (p != glava) {
-        printf("%d ", p->element);
-        p = p->sljedeci;
-    }
-    printf("\n");
-    return 0;
-}
-
-int pushRedPrioritet(Pozicija glava, int vrijednost, int prioritet) {
-    Pozicija novi = malloc(sizeof(struct cvor));
-    if (!novi) return -1;
-
-    novi->element = vrijednost;
-    novi->prioritet = prioritet;
-    novi->sljedeci = NULL;
-
-    while (glava->sljedeci && glava->sljedeci->prioritet >= prioritet)
-        glava = glava->sljedeci;
-
-    novi->sljedeci = glava->sljedeci;
-    glava->sljedeci = novi;
-    return 0;
-}
-
-int popRedPrioritet(Pozicija glava) {
-    if (!glava->sljedeci) return -1;
-
-    Pozicija temp = glava->sljedeci;
-    glava->sljedeci = temp->sljedeci;
-    printf("Uklonjeno: %d (prioritet %d)\n", temp->element, temp->prioritet);
-    free(temp);
-    return 0;
-}
-
-int ispis(Pozicija p) {
-    if (!p) {
-        printf("Prazno\n");
-        return 0;
-    }
-
-    while (p) {
-        printf("%d(%d) ", p->element, p->prioritet);
-        p = p->sljedeci;
-    }
-    printf("\n");
-    return 0;
-}
-
-void obrisiCirkularniStog(Pozicija glava) {
-    while (glava->sljedeci != glava) {
-        popCirkularniStog(glava, &(int){1});
-    }
-}
-
-void obrisiSve(Pozicija glava) {
-    Pozicija temp;
-    while (glava->sljedeci) {
-        temp = glava->sljedeci;
-        glava->sljedeci = temp->sljedeci;
-        free(temp);
-    }
 }
