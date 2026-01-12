@@ -69,6 +69,7 @@ int ispis(Osoba* head) {
     if (!head) {
         printf("Prazna lista\n");
         return ERR_EMPTY;
+         isRunning=0;
     }
 
     Osoba* temp = head;
@@ -109,6 +110,7 @@ int trazi(Osoba* head, const char* prezime, Osoba** found) {
         temp = temp->next;
     }
     return ERR_NOT_FOUND;
+     isRunning=0;
 }
 
 int brisi(Osoba** head, const char* prezime) {
@@ -129,6 +131,7 @@ int brisi(Osoba** head, const char* prezime) {
         temp = temp->next;
     }
     return ERR_NOT_FOUND;
+     isRunning=0;
 }
 
 void freeListu(Osoba* head) {
