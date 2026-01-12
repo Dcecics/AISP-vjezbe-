@@ -1,418 +1,333 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define OK             0
-#define ERR_ALLOC      1
-#define ERR_INPUT      2
-#define ERR_EMPTY      3
-#define ERR_NOT_FOUND  4
-#define ERR_FILE       5
+#define USER_INPUT_EXIT -1
+#define USER_INPUT_PUSH_FRONT 1
+#define USER_INPUT_PUSH_BACK 2
+#define USER_INPUT_PRINT_LIST 3
+#define USER_INPUT_FIND_BY_LASTNAME 4
+#define USER_INPUT_DELETE_BY_SURNAME 5
+#define USER_INPUT_ADD_AFTER 6
+#define USER_INPUT_ADD_BEFORE 7
+#define USER_INPUT_PRINT_TO_FILE 8
+#define USER_INPUT_READ_FROM_FILE 9
 
-typedef struct _osoba {
-    char ime[50];
-    char prez[50];
-    int god_rod;
-    struct _osoba* next;
-} Osoba;
+typedef struct Person person;
+typedef struct Person* position;
+struct Person {
+    char name[32];
+    char surname[32];
+    int birthYear;
+    position next;
+};
 
-int novaOsoba(Osoba** outNova) {
-    Osoba* nova = (Osoba*)malloc(sizeof(Osoba));
-    if (!nova) {
-        printf("GRESKA u alokaciji\n");
-        *outNova = NULL;
-        return ERR_ALLOC;
-    }
+int pushFront(position, char*, char*, int);
+int pushBack(position, char*, char*, int);
+int pushBefore(position, char*, char*, char*, int);
+int pushAfter(position, char*, char*, char*, int);
+int pushSorted(position, char*, char*, int);
+int deleteAll(position);
+void printListToConsole(position);
+int printListToFile(position, char*);
+int readListFromFile(position, char*);
+void deleteNode(position);
+position findPreviousByLastName(position, char*);
+position findByLastName(position, char*);
+int deleteBySurname(position, char*);
 
-    printf("Unesi ime: ");
-    if (scanf("%49s", nova->ime) != 1) {
-        free(nova);
-        *outNova = NULL;
-        return ERR_INPUT;
-    }
+int main()
+{
+    person head;
+    head.next = NULL;
 
-    printf("Unesi prezime: ");
-    if (scanf("%49s", nova->prez) != 1) {
-        free(nova);
-        *outNova = NULL;
-        return ERR_INPUT;
-    }
+    int isRunning = 1;
+    int choice = 0;
+    int result = 0;
 
-    printf("Unesi godinu rodenja: ");
-    if (scanf("%d", &nova->god_rod) != 1) {
-        free(nova);
-        *outNova = NULL;
-        return ERR_INPUT;
-    }
+    char name[32] = "";
+    char surname[32] = "";
+    int birthYear = 0;
+    char target[32] = "";
+    char filename[50] = "";
+    position foundPerson = NULL;
 
-    nova->next = NULL;
-    *outNova = nova;
-    return OK;
-}
+    while (isRunning) {
+        //print menu
+        printf("\nTo add element to front of the list...........press 1");
+        printf("\nTo add element to back of the list............press 2");
+        printf("\nTo print list.................................press 3");
+        printf("\nTo find element in list.......................press 4");
+        printf("\nTo delete element from list...................press 5");
+        printf("\nTo add element behind targeted last name......press 6");
+        printf("\nTo add element before targeted last name......press 7");
+        printf("\nTo print list into .txt file..................press 8");
+        printf("\nTo read list from .txt file...................press 9");
+        printf("\nTo exit program...............................press -1");
+        printf("\nInsert number: ");
+        scanf("%d", &choice);
 
-int dodajNaPoc(Osoba** head) {
-    Osoba* nova = NULL;
-    int st = novaOsoba(&nova);
-    if (st != OK) return st;
+        switch (choice) {
+        case USER_INPUT_PUSH_FRONT:
+            printf("Insert FirstName LastName YearOfBirth:");
+            scanf("%s %s %d", name, surname, &birthYear);
+            result = pushFront(&head, name, surname, birthYear);
+            if (result == 0) {
+                printf("SUCCES!");
+            }
+            else if (result == -1) {
+                printf("ERROR!");
+                isRunning = 0;
+            }
+           
+            break;
+        case USER_INPUT_PUSH_BACK:
+            printf("Insert FirstName LastName YearOfBirth:");
+            scanf("%s %s %d", name, surname, &birthYear);
+            result = pushBack(&head, name, surname, birthYear);
+            if (result == 0) {
+                printf("SUCCES!");
+            }
+            else if (result == -1) {
+                printf("ERROR!");
+               
+            }
+           
+            break;
+        case USER_INPUT_FIND_BY_LASTNAME:
+            printf("Insert LastName you want to find: ");
+            scanf("%s", surname);
+            foundPerson = findByLastName(&head, surname);
+            if (foundPerson != NULL) {
+                printf("SUCCES!  Found: %s %s %d\n", foundPerson->name, foundPerson->surname, foundPerson->birthYear);
+            } else {
+                printf("ERROR!  Person with that last name not found!\n");
+            }
+            break;
+        case USER_INPUT_DELETE_BY_SURNAME:
+            printf("Insert LastName of person you want to delete: ");
+            scanf("%s", surname);
+            result = deleteBySurname(&head, surname);
+            if (result == 0) {
+                printf("SUCCES!");
+            }
+            else if (result == -1) {
+                printf("ERROR!");
+            }
+            break;
+        case USER_INPUT_ADD_AFTER:
+            printf("Insert last name of person after which you want to add element: ");
+            scanf(" %s", target);
 
-    nova->next = *head;
-    *head = nova;
-    return OK;
-}
+            printf("Insert FirstName LastName YearOfBirth:");
+            scanf(" %s %s %d", name, surname, &birthYear);
+            result = pushAfter(&head, target, name, surname, birthYear);
+            if (result == 0) {
+                printf("SUCCES!");
+            }
+            else {
+                printf("ERROR!");
+            }
+            break;
+        case USER_INPUT_ADD_BEFORE:
+            printf("Insert last name of person before which you want to add element: ");
+            scanf(" %s", target);
 
-int dodajNaKraj(Osoba** head) {
-    Osoba* nova = NULL;
-    int st = novaOsoba(&nova);
-    if (st != OK) return st;
-
-    if (!(*head)) {
-        *head = nova;
-        return OK;
-    }
-
-    Osoba* temp = *head;
-    while (temp->next != NULL) temp = temp->next;
-    temp->next = nova;
-    return OK;
-}
-
-int ispis(Osoba* head) {
-    if (!head) {
-        printf("Prazna lista\n");
-        return ERR_EMPTY;
-    }
-
-    Osoba* temp = head;
-    while (temp) {
-        printf("%s %s %d\n", temp->ime, temp->prez, temp->god_rod);
-        temp = temp->next;
-    }
-    return OK;
-}
-
-int trazi(Osoba* head, const char* prezime, Osoba** found) {
-    *found = NULL;
-
-    Osoba* temp = head;
-    while (temp) {
-        if (strcmp(temp->prez, prezime) == 0) {
-            *found = temp;
-            return OK;
+            printf("Insert FirstName LastName YearOfBirth:");
+            scanf(" %s %s %d", name, surname, &birthYear);
+            result = pushBefore(&head, target, name, surname, birthYear);
+            if (result == 0) {
+                printf("SUCCES!");
+            }
+            else {
+                printf("ERROR!");
+            }
+            break;
+        case USER_INPUT_PRINT_TO_FILE:
+            printf("Insert filename (including .txt extension) in which you want to store list: ");
+            scanf("%s", filename);
+            result = printListToFile(&head, filename);
+            if (result == 0) {
+                printf("SUCCES!");
+            }
+            else {
+                printf("ERROR!");
+            }
+            break;
+        case USER_INPUT_READ_FROM_FILE:
+            printf("Insert filename (including .txt extension) you want to read: ");
+            scanf("%s", filename);
+            result = readListFromFile(&head, filename);
+            if (result == 0) {
+                printf("SUCCES!");
+            }
+            else {
+                printf("ERROR!");
+            }
+            break;
+        case USER_INPUT_PRINT_LIST:
+            printListToConsole(head.next);
+            break;
+        case USER_INPUT_EXIT:
+            isRunning = 0;
+            break;
         }
-        temp = temp->next;
     }
-    return ERR_NOT_FOUND;
+    //clean memory
+    deleteAll(&head);
+
+    return 0;
 }
 
-int brisi(Osoba** head, const char* prezime) {
-    if (!(*head)) return ERR_EMPTY;
-
-    Osoba* temp = *head;
-    Osoba* prev = NULL;
-
-    while (temp) {
-        if (strcmp(temp->prez, prezime) == 0) {
-            if (prev == NULL) *head = temp->next;
-            else prev->next = temp->next;
-
-            free(temp);
-            return OK;
-        }
-        prev = temp;
-        temp = temp->next;
+int pushFront(position head, char* name, char* surname, int birthYear){
+    position newEl = (position)malloc(sizeof(person));
+    if (newEl == NULL) {
+        return -1;
     }
-    return ERR_NOT_FOUND;
+
+    //Init & Fill
+    strcpy(newEl->name, name);
+    strcpy(newEl->surname, surname);
+    newEl->birthYear = birthYear;
+    newEl->next = NULL;
+
+    newEl->next = head->next;
+    head->next = newEl;
+
+    return 0;
 }
 
-int dodajIzaOdredenog(Osoba** head, const char* prezime, Osoba** outNova) {
-    *outNova = NULL;
-    if (!(*head)) return ERR_EMPTY;
+int pushBack(position p, char* name, char* surname, int birthYear) {
 
-    Osoba* temp = *head;
-    while (temp && strcmp(temp->prez, prezime) != 0) {
-        temp = temp->next;
+    while (p->next != NULL) {
+        p = p->next;
     }
-    if (!temp) return ERR_NOT_FOUND;
 
-    Osoba* nova = NULL;
-    int st = novaOsoba(&nova);
-    if (st != OK) return st;
+    return pushFront(p, name, surname, birthYear);
+}
+ //dodaj u izbornik
+int pushBefore(position head, char* targetSurname, char* name, char* surname, int yearOfBirth) {
+    position previous = findPreviousByLastName(head, targetSurname);
+    if (previous == NULL) {
+        return 1;
+    }
 
-    nova->next = temp->next;
-    temp->next = nova;
-    *outNova = nova;
-    return OK;
+    return pushFront(previous, name, surname, yearOfBirth);
 }
 
-int dodajIspredOdredenog(Osoba** head, const char* prezime, Osoba** outNova) {
-    *outNova = NULL;
-    if (!(*head)) return ERR_EMPTY;
-
-    Osoba* temp = *head;
-    Osoba* prev = NULL;
-
-    while (temp && strcmp(temp->prez, prezime) != 0) {
-        prev = temp;
-        temp = temp->next;
+int pushAfter(position head, char* targetSurname, char* name, char* surname, int yearOfBirth) {
+    position previous = findByLastName(head, targetSurname); // napravi analogno previousu
+    if (previous == NULL) {
+        return 1;
     }
-    if (!temp) return ERR_NOT_FOUND;
 
-    Osoba* nova = NULL;
-    int st = novaOsoba(&nova);
-    if (st != OK) return st;
+    return pushFront(previous, name, surname, yearOfBirth);
+}
 
-    if (prev == NULL) {
-        nova->next = *head;
-        *head = nova;
+int pushSorted(position p, char* name, char* surname, int yearOfBirth) {
+    while (p->next != NULL && strcmp(p->next->surname, surname) < 0) {
+        p = p->next;
+    }
+    return pushFront(p, name, surname, yearOfBirth);
+}
+
+int deleteAll(position head) {
+    while (head->next != NULL) {
+        deleteNode(head);
+    }
+    printf("Memory free!");
+    return 0;
+}
+
+void printListToConsole(position p) {
+    if (p == NULL) {
+        printf("\nBlank list!\n");
+        return;
     }
     else {
-        prev->next = nova;
-        nova->next = temp;
-    }
-
-    *outNova = nova;
-    return OK;
-}
-
-int SortirajPoPrezimenu(Osoba* head) {
-    if (!head) return ERR_EMPTY;
-
-    int swapped;
-    Osoba* p;
-    Osoba* q = NULL;
-
-    do {
-        swapped = 0;
-        p = head;
-
-        while (p->next != q) {
-            if (strcmp(p->prez, p->next->prez) > 0) {
-                char imeTmp[50], prezTmp[50];
-                int godTmp;
-
-                strcpy(imeTmp, p->ime);
-                strcpy(prezTmp, p->prez);
-                godTmp = p->god_rod;
-
-                strcpy(p->ime, p->next->ime);
-                strcpy(p->prez, p->next->prez);
-                p->god_rod = p->next->god_rod;
-
-                strcpy(p->next->ime, imeTmp);
-                strcpy(p->next->prez, prezTmp);
-                p->next->god_rod = godTmp;
-
-                swapped = 1;
-            }
+        while (p != NULL) {
+            printf("%s\t%s\t%d\n", p->name, p->surname, p->birthYear);
             p = p->next;
         }
-        q = p;
-    } while (swapped);
-
-    return OK;
+    }
+   
 }
 
-int upisiListuUDat(const char* imeDat, Osoba* head) {
-    FILE* fp = fopen(imeDat, "w");
-    if (!fp) {
-        printf("Ne mogu otvorit datoteku\n");
-        return ERR_FILE;
+int printListToFile(position p, char* fileName) {
+    FILE* fp = fopen(fileName, "w");
+    if (fp == NULL) {
+        return -1;
     }
 
-    Osoba* temp = head;
-    while (temp) {
-        fprintf(fp, "%s %s %d\n", temp->ime, temp->prez, temp->god_rod);
-        temp = temp->next;
+    while (p != NULL) {
+        fprintf(fp, "%s\t%s\t%d\n", p->name, p->surname, p->birthYear);
+        p = p->next;
     }
 
     fclose(fp);
-    return OK;
+    return 0;
 }
 
-int citajListuIzDat(const char* imeDat, Osoba** head) {
-    FILE* fp = fopen(imeDat, "r");
-    if (!fp) {
-        printf("Ne mogu otvoriti datoteku\n");
-        return ERR_FILE;
+int readListFromFile(position p, char* fileName) {
+    FILE* fp = fopen(fileName, "r");
+    if (fp == NULL) {
+        return 1;
     }
 
-    *head = NULL;
-    Osoba* zadnji = NULL;
+    char fn[32] = "";
+    char ln[32] = "";
+    int yob = 0;
+    int result = 0;
 
-    while (1) {
-        Osoba* nova = (Osoba*)malloc(sizeof(Osoba));
-        if (!nova) {
-            fclose(fp);
-            return ERR_ALLOC;
-        }
-
-        if (fscanf(fp, "%49s %49s %d", nova->ime, nova->prez, &nova->god_rod) != 3) {
-            free(nova);
-            break;
-        }
-
-        nova->next = NULL;
-
-        if (*head == NULL) {
-            *head = nova;
-            zadnji = nova;
-        }
-        else {
-            zadnji->next = nova;
-            zadnji = nova;
+    while (!feof(fp)) {
+        result = fscanf(fp, "%s %s %d", fn, ln, &yob);
+        if (result >= 3) {
+            //insert to list
+            result = pushSorted(p, fn, ln, yob);
+            if (result == -1) {
+                //ERROR
+                fclose(fp);
+                return -1;
+            }
         }
     }
-
     fclose(fp);
-    return OK;
+    return 0;
 }
 
-void freeListu(Osoba* head) {
-    while (head) {
-        Osoba* next = head->next;
-        free(head);
-        head = next;
+void deleteNode(position previous) {
+    position t = previous->next;
+    previous->next = t->next;
+    free(t);
+}
+
+position findPreviousByLastName(position p, char* surname) {
+    while (strcmp(p->next->surname, surname) != 0 && p->next != NULL) {
+        p = p->next;
     }
+
+    if (p->next == NULL) {
+        return NULL;
+    }
+
+    return p;
 }
 
-int main() {
-    Osoba* head = NULL;
-    int unos = 0;
-    char prezime[50];
-    Osoba* trazena = NULL;
-    Osoba* novaUbacena = NULL;
+position findByLastName(position p, char* surname) {
+    while (p != NULL && strcmp(p->surname, surname) != 0) {
+        p = p->next;
+    }
+    return p;
+}
 
-    do {
-        int st = OK;
+int deleteBySurname(position p, char* surname) {
+    position previous = findPreviousByLastName(p, surname);
+    if (previous == NULL) {
+        return -1;
+    }
 
-        //ovako je urednije
-        printf("\nIzaberi jedan broj:\n");
-        printf("0 - izlaz\n");
-        printf("1 - dodaj na pocetak\n");
-        printf("2 - ispisi listu\n");
-        printf("3 - dodaj na kraj\n");
-        printf("4 - trazi po prezimenu\n");
-        printf("5 - brisi po prezimenu\n");
-        printf("6 - dodaj iza odredenog prezimena\n");
-        printf("7 - dodaj ispred odredenog prezimena\n");
-        printf("8 - sortiraj po prezimenu\n");
-        printf("9 - upisi listu u datoteku\n");
-        printf("10 - citaj listu iz datoteke\n");
+    deleteNode(previous);
 
-        if (scanf("%d", &unos) != 1) {
-            printf("Krivi unos opcije\n");
-            freeListu(head);
-            return ERR_INPUT;
-        }
-
-        switch (unos) {
-        case 0:
-            printf("Izlaz\n");
-            break;
-
-        case 1:
-            st = dodajNaPoc(&head);
-            if (st == OK) printf("Dodano na pocetak\n");
-            break;
-
-        case 2:
-            st = ispis(head);
-            break;
-
-        case 3:
-            st = dodajNaKraj(&head);
-            if (st == OK) printf("Dodano na kraj\n");
-            break;
-
-        case 4:
-            printf("Koga trazite? ");
-            if (scanf("%49s", prezime) != 1) {
-                printf("Krivi unos prezimena\n");
-                freeListu(head);
-                return ERR_INPUT;
-            }
-            st = trazi(head, prezime, &trazena);
-            if (st == OK) printf("Pronaden: %s %s %d\n", trazena->ime, trazena->prez, trazena->god_rod);
-            else printf("Nije pronadena osoba s prezimenom %s\n", prezime);
-            break;
-
-        case 5:
-            printf("Koga brisete? ");
-            if (scanf("%49s", prezime) != 1) {
-                printf("Krivi unos prezimena\n");
-                freeListu(head);
-                return ERR_INPUT;
-            }
-            st = brisi(&head, prezime);
-            if (st == OK) printf("Osoba %s obrisana\n", prezime);
-            else if (st == ERR_NOT_FOUND) printf("Nije pronadena osoba s prezimenom %s\n", prezime);
-            else if (st == ERR_EMPTY) printf("Lista je prazna\n");
-            break;
-
-        case 6:
-            printf("Iza kojeg prezimena zelite dodati novu osobu? ");
-            if (scanf("%49s", prezime) != 1) {
-                printf("Krivi unos prezimena\n");
-                freeListu(head);
-                return ERR_INPUT;
-            }
-            st = dodajIzaOdredenog(&head, prezime, &novaUbacena);
-            if (st == OK) printf("Dodana osoba iza %s: %s %s %d\n", prezime, novaUbacena->ime, novaUbacena->prez, novaUbacena->god_rod);
-            else if (st == ERR_NOT_FOUND) printf("Nije pronadena osoba s prezimenom %s\n", prezime);
-            else if (st == ERR_EMPTY) printf("Lista je prazna\n");
-            break;
-
-        case 7:
-            printf("Ispred kojeg prezimena zelite dodati novu osobu? ");
-            if (scanf("%49s", prezime) != 1) {
-                printf("Krivi unos prezimena\n");
-                freeListu(head);
-                return ERR_INPUT;
-            }
-            st = dodajIspredOdredenog(&head, prezime, &novaUbacena);
-            if (st == OK) printf("Dodana osoba ispred %s: %s %s %d\n", prezime, novaUbacena->ime, novaUbacena->prez, novaUbacena->god_rod);
-            else if (st == ERR_NOT_FOUND) printf("Nije pronadena osoba s prezimenom %s\n", prezime);
-            else if (st == ERR_EMPTY) printf("Lista je prazna\n");
-            break;
-
-        case 8:
-            st = SortirajPoPrezimenu(head);
-            if (st == OK) printf("Sortirano\n");
-            break;
-
-        case 9:
-            st = upisiListuUDat("lista.txt", head);
-            if (st == OK) printf("Lista upisana\n");
-            break;
-
-        case 10:
-            freeListu(head);
-            head = NULL;
-            st = citajListuIzDat("lista.txt", &head);
-            if (st == OK) printf("Lista procitana\n");
-            break;
-
-        default:
-            printf("NE MOZE!\n");
-            break;
-        }
-
-        if (st != OK) {
-            if (st == ERR_ALLOC) printf("Alokacija je pukla\n");
-            else if (st == ERR_INPUT) printf("Krivi unos\n");
-            else if (st == ERR_EMPTY) printf("Lista je prazna\n");
-            else if (st == ERR_NOT_FOUND) printf("Nije pronadeno\n");
-            else if (st == ERR_FILE) printf("Problem s datotekom\n");
-            else printf("Nepoznata greska\n");
-
-            freeListu(head);
-            return st;
-        }
-
-    } while (unos != 0);
-
-    freeListu(head);
     return 0;
 }
