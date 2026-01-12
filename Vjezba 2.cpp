@@ -23,6 +23,7 @@ int novaOsoba(Osoba** outNova) {
         printf("GRESKA u alokaciji\n");
         *outNova = NULL;
         return ERR_ALLOC;
+         isRunning=0;
     }
 
     printf("Unesi ime: ");
@@ -30,6 +31,7 @@ int novaOsoba(Osoba** outNova) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
+         isRunning=0;
     }
 
     printf("Unesi prezime: ");
@@ -37,6 +39,7 @@ int novaOsoba(Osoba** outNova) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
+         isRunning=0;
     }
 
     printf("Unesi godinu rodenja: ");
@@ -44,6 +47,7 @@ int novaOsoba(Osoba** outNova) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
+         isRunning=0;
     }
 
     nova->next = NULL;
@@ -140,7 +144,7 @@ int main() {
     int unos = 0;
     char prezime[50];
     Osoba* trazena = NULL;
-
+    int isRunning=1;
     do {
         int st = OK;
 
@@ -151,6 +155,7 @@ int main() {
             printf("Krivi unos opcije\n");
             freeListu(head);
             return ERR_INPUT;
+            isRunning=0;
         }
 
         switch (unos) {
@@ -178,6 +183,7 @@ int main() {
                 printf("Krivi unos prezimena\n");
                 freeListu(head);
                 return ERR_INPUT;
+                 isRunning=0;
             }
             st = trazi(head, prezime, &trazena);
             if (st == OK) {
@@ -194,6 +200,7 @@ int main() {
                 printf("Krivi unos prezimena\n");
                 freeListu(head);
                 return ERR_INPUT;
+                 isRunning=0;
             }
             st = brisi(&head, prezime);
             if (st == OK) printf("Osoba %s obrisana\n", prezime);
