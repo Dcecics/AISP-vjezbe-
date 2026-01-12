@@ -3,170 +3,283 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MIN 10
-#define MAX 100
+#define OK             0
+#define ERR_ALLOC      1
+#define ERR_EMPTY      2
+#define ERR_INPUT      3
 
-struct cvor;
-typedef struct cvor* Pozicija;
+typedef struct Cvor {
+    int elem;
+    struct Cvor* next;
+} Cvor;
 
-struct cvor {
-    int element;
-    Pozicija sljedeci;
-};
+int Push(Cvor** head) {
+    int broj = rand() % 91 + 10;
 
-int pushStog(Pozicija glava, int vrijednost);
-int popStog(Pozicija glava);
-int pushRed(Pozicija glava, Pozicija* zadnji, int vrijednost);
-int popRed(Pozicija glava, Pozicija* zadnji);
-int ispis(Pozicija prvi);
-int obrisiSve(Pozicija glava);
-int slucajniBroj(void);
-
-int main() {
-    struct cvor glavaStog = { 0, NULL };
-    struct cvor glavaRed = { 0, NULL };
-    Pozicija zadnjiRed = NULL;
-    int izbor = 0;
-    int rezultat = 0;
-
-    srand((unsigned)time(NULL));
-
-    do {
-        printf("\n1 Push stog\n2 Pop stog\n3 Ispis stog\n4 Ispis red\n5 Push red\n6 Pop red\n");
-        scanf("%d", &izbor);
-
-        switch (izbor) {
-
-        case 1:
-            rezultat = pushStog(&glavaStog, slucajniBroj());
-            if (rezultat == -1)
-                printf("Greska pri alokaciji memorije!\n");
-            break;
-
-        case 2:
-            rezultat = popStog(&glavaStog);
-            if (rezultat == -1)
-                printf("Stog je prazan!\n");
-            break;
-
-        case 3:
-            ispis(glavaStog.sljedeci);
-            break;
-
-        case 4:
-            ispis(glavaRed.sljedeci);
-            break;
-
-        case 5:
-            rezultat = pushRed(&glavaRed, &zadnjiRed, slucajniBroj());
-            if (rezultat == -1)
-                printf("Greska pri alokaciji memorije!\n");
-            break;
-
-        case 6:
-            rezultat = popRed(&glavaRed, &zadnjiRed);
-            if (rezultat == -1)
-                printf("Red je prazan!\n");
-            break;
-
-        default:
-            printf("Nepostojeca opcija!\n");
-        }
-
-        printf("0 nastavi, 1 izlaz: ");
-        scanf("%d", &izbor);
-
-    } while (izbor == 0);
-
-    obrisiSve(&glavaStog);
-    obrisiSve(&glavaRed);
-
-    return 0;
-}
-
-int slucajniBroj(void) {
-    return rand() % (MAX - MIN + 1) + MIN;
-}
-
-int pushStog(Pozicija glava, int vrijednost) {
-    Pozicija novi = (Pozicija)malloc(sizeof(struct cvor));
-    if (!novi)
-        return -1;
-
-    novi->element = vrijednost;
-    novi->sljedeci = glava->sljedeci;
-    glava->sljedeci = novi;
-    return 0;
-}
-
-int popStog(Pozicija glava) {
-    Pozicija temp;
-
-    if (!glava->sljedeci)
-        return -1;
-
-    temp = glava->sljedeci;
-    glava->sljedeci = temp->sljedeci;
-    printf("Uklonjeno: %d\n", temp->element);
-    free(temp);
-    return 0;
-}
-
-int pushRed(Pozicija glava, Pozicija* zadnji, int vrijednost) {
-    Pozicija novi = (Pozicija)malloc(sizeof(struct cvor));
-    if (!novi)
-        return -1;
-
-    novi->element = vrijednost;
-    novi->sljedeci = NULL;
-
-    if (!glava->sljedeci)
-        glava->sljedeci = novi;
-    else
-        (*zadnji)->sljedeci = novi;
-
-    *zadnji = novi;
-    return 0;
-}
-
-int popRed(Pozicija glava, Pozicija* zadnji) {
-    Pozicija temp;
-
-    if (!glava->sljedeci)
-        return -1;
-
-    temp = glava->sljedeci;
-    glava->sljedeci = temp->sljedeci;
-
-    if (!glava->sljedeci)
-        *zadnji = NULL;
-
-    printf("Uklonjeno: %d\n", temp->element);
-    free(temp);
-    return 0;
-}
-
-int ispis(Pozicija p) {
-    if (!p) {
-        printf("Prazno\n");
-        return 0;
+    Cvor* novi = (Cvor*)malloc(sizeof(Cvor));
+    if (novi == NULL) {
+        printf("Greska u alokaciji\n");
+        return ERR_ALLOC;
     }
 
-    while (p) {
-        printf("%d ", p->element);
-        p = p->sljedeci;
+    novi->elem = broj;
+    novi->next = *head;
+    *head = novi;
+
+    printf("Dodan %d\n", broj);
+    return OK;
+}
+
+int Pop(Cvor** head, int* outBroj) {
+    if (*head == NULL) {
+        printf("Stog je prazan\n");
+        return ERR_EMPTY;
+    }
+
+    Cvor* temp = *head;
+    *outBroj = temp->elem;
+    *head = (*head)->next;
+    free(temp);
+
+    printf("Uklonjen %d\n", *outBroj);
+    return OK;
+}
+
+int IspisStog(Cvor* head) {
+    if (head == NULL) {
+        printf("Stog prazan\n");
+        return ERR_EMPTY;
+    }
+
+    printf("Stog: ");
+    while (head) {
+        printf("%d ", head->elem);
+        head = head->next;
     }
     printf("\n");
-    return 0;
+    return OK;
 }
 
-int obrisiSve(Pozicija glava) {
-    Pozicija temp;
-    while (glava->sljedeci) {
-        temp = glava->sljedeci;
-        glava->sljedeci = temp->sljedeci;
-        free(temp);
+int Enqueue(Cvor** head, Cvor** tail) {
+    int broj = rand() % 91 + 10;
+
+    Cvor* novi = (Cvor*)malloc(sizeof(Cvor));
+    if (novi == NULL) {
+        printf("Greska u alokaciji\n");
+        return ERR_ALLOC;
     }
-    return 0;
+
+    novi->elem = broj;
+    novi->next = NULL;
+
+    if (*tail == NULL) {
+        *head = novi;
+        *tail = novi;
+    }
+    else {
+        (*tail)->next = novi;
+        *tail = novi;
+    }
+
+    printf("Dodan %d\n", broj);
+    return OK;
 }
 
+int Dequeue(Cvor** head, Cvor** tail, int* outBroj) {
+    if (*head == NULL) {
+        printf("Red prazan\n");
+        return ERR_EMPTY;
+    }
+
+    Cvor* temp = *head;
+    *outBroj = temp->elem;
+    *head = (*head)->next;
+
+    if (*head == NULL) {
+        *tail = NULL;
+    }
+
+    free(temp);
+
+    printf("Uklonjen %d\n", *outBroj);
+    return OK;
+}
+
+int IspisRed(Cvor* head) {
+    if (head == NULL) {
+        printf("Red prazan\n");
+        return ERR_EMPTY;
+    }
+
+    printf("Red: ");
+    while (head) {
+        printf("%d ", head->elem);
+        head = head->next;
+    }
+    printf("\n");
+    return OK;
+}
+
+void freeMem(Cvor* head) {
+    while (head) {
+        Cvor* next = head->next;
+        free(head);
+        head = next;
+    }
+}
+
+void MeniStog(void) {
+    printf("1 push\n");
+    printf("2 pop\n");
+    printf("3 ispis\n");
+    printf("0 povratak\n");
+    printf("Izaberi: ");
+}
+
+void MeniRed(void) {
+    printf("1 enqueue\n");
+    printf("2 dequeue\n");
+    printf("3 ispis\n");
+    printf("0 povratak\n");
+    printf("Izaberi: ");
+}
+
+int simStog(Cvor** stog) {
+    int izbor = 0;
+    int x = 0;
+
+    printf("\nSimulacija stoga\n");
+
+    do {
+        MeniStog();
+        if (scanf("%d", &izbor) != 1) {
+            printf("Krivi unos\n");
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
+
+        switch (izbor) {
+        case 1: {
+            int st = Push(stog);
+            if (st != OK) {
+                freeMem(*stog);
+                *stog = NULL;
+                return st;
+            }
+            break;
+        }
+        case 2:
+            Pop(stog, &x);
+            break;
+        case 3:
+            IspisStog(*stog);
+            break;
+        case 0:
+            printf("Povratak\n");
+            break;
+        default:
+            printf("Neispravan izbor\n");
+        }
+    } while (izbor != 0);
+
+    return OK;
+}
+
+int simRed(Cvor** head, Cvor** tail) {
+    int izbor = 0;
+    int x = 0;
+
+    printf("\nSimulacija reda\n");
+
+    do {
+        MeniRed();
+        if (scanf("%d", &izbor) != 1) {
+            printf("Krivi unos\n");
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
+
+        switch (izbor) {
+        case 1:
+        {
+            int st = Enqueue(head, tail);
+            if (st != OK) {
+                freeMem(*head);
+                *head = NULL;
+                *tail = NULL;
+                return st;
+            }
+            break;
+        }
+        case 2:
+            Dequeue(head, tail, &x);
+            break;
+        case 3:
+            IspisRed(*head);
+            break;
+        case 0:
+            printf("Povratak\n");
+            break;
+        default:
+            printf("Neispravan izbor\n");
+        }
+    } while (izbor != 0);
+
+    return OK;
+}
+
+int main(void) {
+    srand((unsigned)time(NULL));
+
+    Cvor* stog = NULL;
+    Cvor* redHead = NULL;
+    Cvor* redTail = NULL;
+
+    int izbor = 0;
+    int st = 0;
+
+    do {
+        printf("\n1 Simulacija stoga\n");
+        printf("2 Simulacija reda\n");
+        printf("0 Izlaz\n");
+        printf("Izaberi: ");
+
+        if (scanf("%d", &izbor) != 1) {
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            continue;
+        }
+
+        switch (izbor) {
+        case 1:
+            st = simStog(&stog);
+            if (st != OK) {
+                freeMem(stog);
+                freeMem(redHead);
+                return st;
+            }
+            break;
+        case 2:
+            st = simRed(&redHead, &redTail);
+            if (st != OK) {
+                freeMem(stog);
+                freeMem(redHead);
+                return st;
+            }
+            break;
+        case 0:
+            printf("Izlaz\n");
+            break;
+        default:
+            printf("Neispravan izbor\n");
+            break;
+        }
+    } while (izbor != 0);
+
+    freeMem(stog);
+    freeMem(redHead);
+
+    return 0;
+}
