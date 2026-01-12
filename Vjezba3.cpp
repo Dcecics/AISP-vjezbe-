@@ -91,7 +91,7 @@ int main()
             }
             else if (result == -1) {
                 printf("ERROR!");
-               
+                isRunning = 0;
             }
            
             break;
@@ -114,6 +114,7 @@ int main()
             }
             else if (result == -1) {
                 printf("ERROR!");
+                 isRunning = 0;
             }
             break;
         case USER_INPUT_ADD_AFTER:
@@ -128,6 +129,7 @@ int main()
             }
             else {
                 printf("ERROR!");
+                 isRunning = 0;
             }
             break;
         case USER_INPUT_ADD_BEFORE:
@@ -142,6 +144,7 @@ int main()
             }
             else {
                 printf("ERROR!");
+                 isRunning = 0;
             }
             break;
         case USER_INPUT_PRINT_TO_FILE:
@@ -153,6 +156,7 @@ int main()
             }
             else {
                 printf("ERROR!");
+                 isRunning = 0;
             }
             break;
         case USER_INPUT_READ_FROM_FILE:
@@ -164,6 +168,7 @@ int main()
             }
             else {
                 printf("ERROR!");
+                 isRunning = 0;
             }
             break;
         case USER_INPUT_PRINT_LIST:
