@@ -2,201 +2,219 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct cvor;
-typedef struct cvor* Pozicija;
+#define OK             0
+#define ERR_ALLOC      1
+#define ERR_INPUT      2
+#define ERR_EMPTY      3
 
-struct cvor {
-    int element;
-    Pozicija sljedeci;
-};
+typedef struct Cvor {
+    int elem;
+    struct Cvor* next;
+} Cvor;
 
-/* Prototipi */
-int ucitajIzDatoteke(Pozicija glava);
-int ispisListe(Pozicija prvi);
-int unija(Pozicija L1, Pozicija L2, Pozicija U);
-int presjek(Pozicija L1, Pozicija L2, Pozicija P);
-void obrisiSve(Pozicija glava);
-
-int main() {
-    struct cvor glava1 = { 0, NULL };
-    struct cvor glava2 = { 0, NULL };
-    struct cvor glavaUnija = { 0, NULL };
-    struct cvor glavaPresjek = { 0, NULL };
-
-    if (ucitajIzDatoteke(&glava1) != 0) {
-        printf("Greska pri ucitavanju prve liste!\n");
-        return 1;
+void Ispis(Cvor* head) {
+    if (head == NULL) {
+        printf("Lista je prazna\n");
+        return;
     }
 
-    if (ucitajIzDatoteke(&glava2) != 0) {
-        printf("Greska pri ucitavanju druge liste!\n");
-        obrisiSve(&glava1);
-        return 1;
-    }
-
-    printf("\nLista 1: ");
-    ispisListe(glava1.sljedeci);
-
-    printf("Lista 2: ");
-    ispisListe(glava2.sljedeci);
-
-    if (unija(glava1.sljedeci, glava2.sljedeci, &glavaUnija) != 0) {
-        printf("Greska pri izradi unije!\n");
-        obrisiSve(&glava1);
-        obrisiSve(&glava2);
-        obrisiSve(&glavaUnija);
-        return 1;
-    }
-
-    if (presjek(glava1.sljedeci, glava2.sljedeci, &glavaPresjek) != 0) {
-        printf("Greska pri izradi presjeka!\n");
-        obrisiSve(&glava1);
-        obrisiSve(&glava2);
-        obrisiSve(&glavaUnija);
-        obrisiSve(&glavaPresjek);
-        return 1;
-    }
-
-    printf("\nUnija: ");
-    ispisListe(glavaUnija.sljedeci);
-
-    printf("Presjek: ");
-    ispisListe(glavaPresjek.sljedeci);
-
-    obrisiSve(&glava1);
-    obrisiSve(&glava2);
-    obrisiSve(&glavaUnija);
-    obrisiSve(&glavaPresjek);
-
-    return 0;
-}
-
-int ucitajIzDatoteke(Pozicija glava) {
-    char imeDatoteke[128];
-    FILE* dat = NULL;
-    int vrijednost;
-    Pozicija zadnji = glava;
-    Pozicija novi = NULL;
-
-    printf("Unesite ime datoteke: ");
-    scanf(" %s", imeDatoteke);
-
-    dat = fopen(imeDatoteke, "r");
-    if (!dat) {
-        printf("Datoteka se ne moze otvoriti!\n");
-        return 1;
-    }
-
-    while (fscanf(dat, "%d", &vrijednost) == 1) {
-        novi = (Pozicija)malloc(sizeof(struct cvor));
-        if (!novi) {
-            fclose(dat);
-            obrisiSve(glava);
-            return -1;
-        }
-
-        novi->element = vrijednost;
-        novi->sljedeci = NULL;
-        zadnji->sljedeci = novi;
-        zadnji = novi;
-    }
-
-    fclose(dat);
-    return 0;
-}
-
-int ispisListe(Pozicija p) {
-    if (!p) {
-        printf("Prazna lista\n");
-        return 0;
-    }
-
-    while (p) {
-        printf("%d ", p->element);
-        p = p->sljedeci;
+    printf("Lista: ");
+    while (head) {
+        printf("%d ", head->elem);
+        head = head->next;
     }
     printf("\n");
-    return 0;
 }
 
-int unija(Pozicija L1, Pozicija L2, Pozicija U) {
-    Pozicija zadnji = U;
-    Pozicija novi = NULL;
-    int zadnjaVrijednost = 0;
+int DodajNaKraj(Cvor** head, Cvor** tail, int broj) {
+    Cvor* novi = (Cvor*)malloc(sizeof(Cvor));
+    if (!novi) return ERR_ALLOC;
+
+    novi->elem = broj;
+    novi->next = NULL;
+
+    if (*head == NULL) {
+        *head = novi;
+        *tail = novi;
+    }
+    else {
+        (*tail)->next = novi;
+        *tail = novi;
+    }
+    return OK;
+}
+
+/* preskoci sve uzastopne iste vrijednosti */
+Cvor* preskociJednake(Cvor* p) {
+    if (!p) return NULL;
+    int v = p->elem;
+    while (p && p->elem == v) p = p->next;
+    return p;
+}
+
+/* provjeravamo jel uneseno sortirano */
+int unosListe(int brListe, Cvor** head) {
+    *head = NULL;
+    Cvor* tail = NULL;
+
+    int n = 0;
+    int broj = 0;
+    int prev = 0;
     int prvi = 1;
 
-    while (L1 || L2) {
-        int vrijednost;
+    printf("\nUnos liste L%d\n", brListe);
+    printf("Koliko elem zelite unijeti? ");
 
-        if (!L2 || (L1 && L1->element < L2->element)) {
-            vrijednost = L1->element;
-            L1 = L1->sljedeci;
-        }
-        else if (!L1 || L2->element < L1->element) {
-            vrijednost = L2->element;
-            L2 = L2->sljedeci;
-        }
-        else {
-            vrijednost = L1->element;
-            L1 = L1->sljedeci;
-            L2 = L2->sljedeci;
-        }
+    if (scanf("%d", &n) != 1) return ERR_INPUT;
 
-        if (prvi || vrijednost != zadnjaVrijednost) {
-            novi = (Pozicija)malloc(sizeof(struct cvor));
-            if (!novi) {
-                obrisiSve(U);
-                return -1;
-            }
-
-            novi->element = vrijednost;
-            novi->sljedeci = NULL;
-            zadnji->sljedeci = novi;
-            zadnji = novi;
-
-            zadnjaVrijednost = vrijednost;
-            prvi = 0;
-        }
+    if (n <= 0) {
+        printf("Lista prazna\n");
+        return ERR_EMPTY;
     }
-    return 0;
+
+    printf("Unesite %d sortiranih brojeva (od manjeg prema vecem):\n", n);
+
+    for (int i = 0; i < n; i++) {
+        printf("Elem %d: ", i + 1);
+        if (scanf("%d", &broj) != 1) return ERR_INPUT;
+
+        if (!prvi && broj < prev) {
+            printf("Lista nije sortirana (%d nakon %d)\n", broj, prev);
+            return ERR_INPUT;
+        }
+        prvi = 0;
+        prev = broj;
+
+        int st = DodajNaKraj(head, &tail, broj);
+        if (st != OK) return st;
+    }
+
+    return OK;
 }
 
-int presjek(Pozicija L1, Pozicija L2, Pozicija P) {
-    Pozicija zadnji = P;
-    Pozicija novi = NULL;
+int Unija(Cvor* L1, Cvor* L2, Cvor** rez) {
+    *rez = NULL;
+    Cvor* tail = NULL;
 
     while (L1 && L2) {
-        if (L1->element == L2->element) {
-            novi = (Pozicija)malloc(sizeof(struct cvor));
-            if (!novi) {
-                obrisiSve(P);
-                return -1;
-            }
-
-            novi->element = L1->element;
-            novi->sljedeci = NULL;
-            zadnji->sljedeci = novi;
-            zadnji = novi;
-
-            L1 = L1->sljedeci;
-            L2 = L2->sljedeci;
+        if (L1->elem < L2->elem) {
+            int st = DodajNaKraj(rez, &tail, L1->elem);
+            if (st != OK) return st;
+            L1 = preskociJednake(L1);
         }
-        else if (L1->element < L2->element) {
-            L1 = L1->sljedeci;
+        else if (L1->elem > L2->elem) {
+            int st = DodajNaKraj(rez, &tail, L2->elem);
+            if (st != OK) return st;
+            L2 = preskociJednake(L2);
         }
         else {
-            L2 = L2->sljedeci;
+            int st = DodajNaKraj(rez, &tail, L1->elem);
+            if (st != OK) return st;
+            L1 = preskociJednake(L1);
+            L2 = preskociJednake(L2);
         }
     }
-    return 0;
+
+    while (L1) {
+        int st = DodajNaKraj(rez, &tail, L1->elem);
+        if (st != OK) return st;
+        L1 = preskociJednake(L1);
+    }
+
+    while (L2) {
+        int st = DodajNaKraj(rez, &tail, L2->elem);
+        if (st != OK) return st;
+        L2 = preskociJednake(L2);
+    }
+
+    return (*rez == NULL) ? ERR_EMPTY : OK;
 }
 
-void obrisiSve(Pozicija glava) {
-    Pozicija temp;
+int Presjek(Cvor* L1, Cvor* L2, Cvor** rez) {
+    *rez = NULL;
+    Cvor* tail = NULL;
 
-    while (glava->sljedeci) {
-        temp = glava->sljedeci;
-        glava->sljedeci = temp->sljedeci;
-        free(temp);
+    while (L1 && L2) {
+        if (L1->elem < L2->elem) {
+            L1 = preskociJednake(L1);
+        }
+        else if (L1->elem > L2->elem) {
+            L2 = preskociJednake(L2);
+        }
+        else {
+            int st = DodajNaKraj(rez, &tail, L1->elem);
+            if (st != OK) return st;
+            L1 = preskociJednake(L1);
+            L2 = preskociJednake(L2);
+        }
     }
+
+    return (*rez == NULL) ? ERR_EMPTY : OK;
+}
+
+void freeMem(Cvor* head) {
+    while (head) {
+        Cvor* next = head->next;
+        free(head);
+        head = next;
+    }
+}
+
+int main() {
+    Cvor* L1 = NULL;
+    Cvor* L2 = NULL;
+    Cvor* unijaRez = NULL;
+    Cvor* presjekRez = NULL;
+
+    int st = unosListe(1, &L1);
+    if (st != OK && st != ERR_EMPTY) {
+        printf("Problem pri unosu L1\n");
+        freeMem(L1);
+        return 1;
+    }
+    printf("\nUnesena L1:\n");
+    Ispis(L1);
+
+    st = unosListe(2, &L2);
+    if (st != OK && st != ERR_EMPTY) {
+        printf("Problem pri unosu L2\n");
+        freeMem(L1);
+        freeMem(L2);
+        return 1;
+    }
+    printf("\nUnesena L2:\n");
+    Ispis(L2);
+
+    st = Unija(L1, L2, &unijaRez);
+    printf("\nL1 U L2:\n");
+    if (st == OK) Ispis(unijaRez);
+    else if (st == ERR_EMPTY) printf("Prazna\n");
+    else {
+        printf("Greska pri racunanju unije\n");
+        freeMem(L1);
+        freeMem(L2);
+        freeMem(unijaRez);
+        freeMem(presjekRez);
+        return st;
+    }
+
+    st = Presjek(L1, L2, &presjekRez);
+    printf("\nL1 n L2:\n");
+    if (st == OK) Ispis(presjekRez);
+    else if (st == ERR_EMPTY) printf("Prazna\n");
+    else {
+        printf("Greska pri racunanju presjeka\n");
+        freeMem(L1);
+        freeMem(L2);
+        freeMem(unijaRez);
+        freeMem(presjekRez);
+        return st;
+    }
+
+    freeMem(L1);
+    freeMem(L2);
+    freeMem(unijaRez);
+    freeMem(presjekRez);
+
+    return 0;
 }
