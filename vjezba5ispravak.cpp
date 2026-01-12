@@ -40,8 +40,22 @@ int main() {
     printf("Lista 2: ");
     ispisListe(glava2.sljedeci);
 
-    unija(glava1.sljedeci, glava2.sljedeci, &glavaUnija);
-    presjek(glava1.sljedeci, glava2.sljedeci, &glavaPresjek);
+    if (unija(glava1.sljedeci, glava2.sljedeci, &glavaUnija) != 0) {
+        printf("Greska pri izradi unije!\n");
+        obrisiSve(&glava1);
+        obrisiSve(&glava2);
+        obrisiSve(&glavaUnija);
+        return 1;
+    }
+
+    if (presjek(glava1.sljedeci, glava2.sljedeci, &glavaPresjek) != 0) {
+        printf("Greska pri izradi presjeka!\n");
+        obrisiSve(&glava1);
+        obrisiSve(&glava2);
+        obrisiSve(&glavaUnija);
+        obrisiSve(&glavaPresjek);
+        return 1;
+    }
 
     printf("\nUnija: ");
     ispisListe(glavaUnija.sljedeci);
@@ -77,6 +91,7 @@ int ucitajIzDatoteke(Pozicija glava) {
         novi = (Pozicija)malloc(sizeof(struct cvor));
         if (!novi) {
             fclose(dat);
+            obrisiSve(glava);
             return -1;
         }
 
@@ -104,7 +119,6 @@ int ispisListe(Pozicija p) {
     return 0;
 }
 
-
 int unija(Pozicija L1, Pozicija L2, Pozicija U) {
     Pozicija zadnji = U;
     Pozicija novi = NULL;
@@ -130,7 +144,10 @@ int unija(Pozicija L1, Pozicija L2, Pozicija U) {
 
         if (prvi || vrijednost != zadnjaVrijednost) {
             novi = (Pozicija)malloc(sizeof(struct cvor));
-            if (!novi) return -1;
+            if (!novi) {
+                obrisiSve(U);
+                return -1;
+            }
 
             novi->element = vrijednost;
             novi->sljedeci = NULL;
@@ -144,7 +161,6 @@ int unija(Pozicija L1, Pozicija L2, Pozicija U) {
     return 0;
 }
 
-
 int presjek(Pozicija L1, Pozicija L2, Pozicija P) {
     Pozicija zadnji = P;
     Pozicija novi = NULL;
@@ -152,7 +168,10 @@ int presjek(Pozicija L1, Pozicija L2, Pozicija P) {
     while (L1 && L2) {
         if (L1->element == L2->element) {
             novi = (Pozicija)malloc(sizeof(struct cvor));
-            if (!novi) return -1;
+            if (!novi) {
+                obrisiSve(P);
+                return -1;
+            }
 
             novi->element = L1->element;
             novi->sljedeci = NULL;
@@ -171,7 +190,6 @@ int presjek(Pozicija L1, Pozicija L2, Pozicija P) {
     }
     return 0;
 }
-
 
 void obrisiSve(Pozicija glava) {
     Pozicija temp;
