@@ -103,6 +103,7 @@ int main()
                 printf("SUCCES!  Found: %s %s %d\n", foundPerson->name, foundPerson->surname, foundPerson->birthYear);
             } else {
                 printf("ERROR!  Person with that last name not found!\n");
+                 isRunning=0;
             }
             break;
         case USER_INPUT_DELETE_BY_SURNAME:
@@ -175,7 +176,6 @@ int main()
             printListToConsole(head.next);
             break;
         case USER_INPUT_EXIT:
-            isRunning = 0;
             break;
         }
     }
