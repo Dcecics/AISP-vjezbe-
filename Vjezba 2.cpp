@@ -26,14 +26,14 @@ int novaOsoba(Osoba** outNova) {
     }
 
     printf("Unesi ime: ");
-    if (scanf("%49s", nova->ime) != 1) {
+    if (scanf("%s", nova->ime) != 1) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
     }
 
     printf("Unesi prezime: ");
-    if (scanf("%49s", nova->prez) != 1) {
+    if (scanf("%s", nova->prez) != 1) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
