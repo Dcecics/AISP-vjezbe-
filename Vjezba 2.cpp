@@ -1,5 +1,4 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,11 +18,11 @@ typedef struct _osoba {
 
 int novaOsoba(Osoba** outNova) {
     Osoba* nova = (Osoba*)malloc(sizeof(Osoba));
+
     if (!nova) {
         printf("GRESKA u alokaciji\n");
         *outNova = NULL;
         return ERR_ALLOC;
-         isRunning=0;
     }
 
     printf("Unesi ime: ");
@@ -31,7 +30,6 @@ int novaOsoba(Osoba** outNova) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
-         isRunning=0;
     }
 
     printf("Unesi prezime: ");
@@ -39,7 +37,6 @@ int novaOsoba(Osoba** outNova) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
-         isRunning=0;
     }
 
     printf("Unesi godinu rodenja: ");
@@ -47,54 +44,64 @@ int novaOsoba(Osoba** outNova) {
         free(nova);
         *outNova = NULL;
         return ERR_INPUT;
-         isRunning=0;
     }
 
     nova->next = NULL;
     *outNova = nova;
+
     return OK;
 }
 
-int dodajNaPoc(Osoba** head) {
+int addBeginning(Osoba** head) {
     Osoba* nova = NULL;
+
     int st = novaOsoba(&nova);
-    if (st != OK) return st;
+    if (st != OK)
+        return st;
 
     nova->next = *head;
     *head = nova;
+
     return OK;
 }
 
-int ispis(Osoba* head) {
-    if (!head) {
-        printf("Prazna lista\n");
-        return ERR_EMPTY;
-         isRunning=0;
-    }
-
-    Osoba* temp = head;
-    while (temp) {
-        printf("%s %s %d\n", temp->ime, temp->prez, temp->god_rod);
-        temp = temp->next;
-    }
-    return OK;
-}
-
-int dodajNaKraj(Osoba** head) {
+int addEnd(Osoba** head) {
     Osoba* nova = NULL;
-    int st = novaOsoba(&nova);
-    if (st != OK) return st;
 
-    if (!(*head)) {
+    int st = novaOsoba(&nova);
+    if (st != OK)
+        return st;
+
+    if (*head == NULL) {
         *head = nova;
         return OK;
     }
 
     Osoba* temp = *head;
-    while (temp->next != NULL) {
+
+    while (temp->next != NULL)
+        temp = temp->next;
+
+    temp->next = nova;
+
+    return OK;
+}
+
+int ispis(Osoba* head) {
+    if (head == NULL) {
+        printf("Prazna lista\n");
+        return ERR_EMPTY;
+    }
+
+    Osoba* temp = head;
+
+    while (temp != NULL) {
+        printf("%s %s %d\n",
+            temp->ime, temp->prez, temp->god_rod);
+
         temp = temp->next;
     }
-    temp->next = nova;
+
     return OK;
 }
 
@@ -102,40 +109,98 @@ int trazi(Osoba* head, const char* prezime, Osoba** found) {
     *found = NULL;
 
     Osoba* temp = head;
-    while (temp) {
+
+    while (temp != NULL) {
         if (strcmp(temp->prez, prezime) == 0) {
             *found = temp;
             return OK;
         }
+
         temp = temp->next;
     }
+
     return ERR_NOT_FOUND;
-     isRunning=0;
 }
 
 int brisi(Osoba** head, const char* prezime) {
-    if (!(*head)) return ERR_EMPTY;
+    if (*head == NULL)
+        return ERR_EMPTY;
 
     Osoba* temp = *head;
     Osoba* prev = NULL;
 
-    while (temp) {
+    while (temp != NULL) {
         if (strcmp(temp->prez, prezime) == 0) {
-            if (prev == NULL) *head = temp->next;
-            else prev->next = temp->next;
+            if (prev == NULL)
+                *head = temp->next;
+            else
+                prev->next = temp->next;
 
             free(temp);
             return OK;
         }
+
         prev = temp;
         temp = temp->next;
     }
+
     return ERR_NOT_FOUND;
-     isRunning=0;
+}
+
+int ucitajIzDatoteke(Osoba** head) {
+    FILE* dat = fopen("dat.txt", "r");
+
+    if (dat == NULL) {
+        printf("GRESKA: Datoteka dat.txt nije pronadena\n");
+        return ERR_INPUT;
+    }
+
+    Osoba* kraj = NULL;
+
+    while (1) {
+        Osoba* nova = (Osoba*)malloc(sizeof(Osoba));
+
+        if (nova == NULL) {
+            printf("GRESKA u alokaciji\n");
+            fclose(dat);
+            return ERR_ALLOC;
+        }
+
+        int rezultat = fscanf(dat, "%s %s %d",
+            nova->ime,
+            nova->prez,
+            &nova->god_rod);
+
+        if (rezultat == EOF) {
+            free(nova);
+            break;
+        }
+
+        if (rezultat != 3) {
+            free(nova);
+            printf("GRESKA pri citanju datoteke\n");
+            fclose(dat);
+            return ERR_INPUT;
+        }
+
+        nova->next = NULL;
+
+        if (*head == NULL) {
+            *head = nova;
+            kraj = nova;
+        }
+        else {
+            kraj->next = nova;
+            kraj = nova;
+        }
+    }
+
+    fclose(dat);
+    return OK;
 }
 
 void freeListu(Osoba* head) {
-    while (head) {
+    while (head != NULL) {
         Osoba* next = head->next;
         free(head);
         head = next;
@@ -144,31 +209,49 @@ void freeListu(Osoba* head) {
 
 int main() {
     Osoba* head = NULL;
-    int unos = 0;
-    char prezime[50];
     Osoba* trazena = NULL;
-    int isRunning=1;
+
+    int unos = 0;
+    int st = OK;
+    int isRunning = 1;
+
+    char prezime[50];
+
+    st = ucitajIzDatoteke(&head);
+
+    if (st != OK) {
+        freeListu(head);
+        return st;
+    }
+
     do {
-        int st = OK;
+        st = OK;
 
         printf("\nIzaberi jedan broj:\n");
-        printf("0 - izlaz, 1 - dodaj na pocetak, 2 - ispisi listu, 3 - dodaj na kraj, 4 - trazi po prezimenu, 5 - brisi po prezimenu\n");
+        printf("0 - izlaz\n");
+        printf("1 - dodaj na pocetak\n");
+        printf("2 - ispisi listu\n");
+        printf("3 - dodaj na kraj\n");
+        printf("4 - trazi po prezimenu\n");
+        printf("5 - brisi po prezimenu\n");
 
         if (scanf("%d", &unos) != 1) {
             printf("Krivi unos opcije\n");
             freeListu(head);
             return ERR_INPUT;
-            isRunning=0;
         }
 
         switch (unos) {
         case 0:
             printf("Izlaz\n");
+            isRunning = 0;
             break;
 
         case 1:
-            st = dodajNaPoc(&head);
-            if (st == OK) printf("Dodano na pocetak\n");
+            st = addBeginning(&head);
+
+            if (st == OK)
+                printf("Dodano na pocetak\n");
             break;
 
         case 2:
@@ -176,39 +259,56 @@ int main() {
             break;
 
         case 3:
-            st = dodajNaKraj(&head);
-            if (st == OK) printf("Dodano na kraj\n");
+            st = addEnd(&head);
+
+            if (st == OK)
+                printf("Dodano na kraj\n");
             break;
 
         case 4:
             printf("Koga trazite? ");
-            if (scanf("%49s", prezime) != 1) {
+            if (scanf("%s", prezime) != 1) {
                 printf("Krivi unos prezimena\n");
-                freeListu(head);
-                return ERR_INPUT;
-                 isRunning=0;
+                clearerr(stdin);
+                st = ERR_INPUT;
+                break;
             }
+
             st = trazi(head, prezime, &trazena);
+
             if (st == OK) {
-                printf("Pronaden: %s %s %d\n", trazena->ime, trazena->prez, trazena->god_rod);
+                printf("Pronaden: %s %s %d\n",
+                    trazena->ime, trazena->prez, trazena->god_rod);
             }
-            else {
+            else if (st == ERR_NOT_FOUND) {
                 printf("Nije pronadena osoba s prezimenom %s\n", prezime);
+                st = OK;
             }
             break;
 
         case 5:
             printf("Koga brisete? ");
-            if (scanf("%49s", prezime) != 1) {
+
+            if (scanf("%s", prezime) != 1) {
                 printf("Krivi unos prezimena\n");
                 freeListu(head);
                 return ERR_INPUT;
-                 isRunning=0;
             }
+
             st = brisi(&head, prezime);
-            if (st == OK) printf("Osoba %s obrisana\n", prezime);
-            else if (st == ERR_NOT_FOUND) printf("Nije pronadena osoba s prezimenom %s\n", prezime);
-            else if (st == ERR_EMPTY) printf("Lista je prazna\n");
+
+            if (st == OK)
+                printf("Osoba %s obrisana\n", prezime);
+            else if (st == ERR_NOT_FOUND) {
+                printf("Nije pronadena osoba s prezimenom %s\n",
+                    prezime);
+                st = OK;
+            }
+            else if (st == ERR_EMPTY) {
+                printf("Lista je prazna\n");
+                st = OK;
+            }
+
             break;
 
         default:
@@ -217,18 +317,26 @@ int main() {
         }
 
         if (st != OK) {
-            if (st == ERR_ALLOC) printf("Alokacija je pukla\n");
-            else if (st == ERR_INPUT) printf("Krivi unos\n");
-            else if (st == ERR_EMPTY) printf("Lista je prazna\n");
-            else if (st == ERR_NOT_FOUND) printf("Nije pronadeno\n");
-            else printf("Nepoznata greska\n");
+            if (st == ERR_ALLOC)
+                printf("Alokacija je pukla\n");
+            else if (st == ERR_INPUT)
+                printf("Krivi unos\n");
+            else if (st == ERR_EMPTY)
+                printf("Lista je prazna\n");
+            else if (st == ERR_NOT_FOUND)
+                printf("Nije pronadeno\n");
+            else
+                printf("Nepoznata greska\n");
 
-            freeListu(head);
-            return st;
+            if (st == ERR_ALLOC || st == ERR_INPUT) {
+                freeListu(head);
+                return st;
+            }
         }
 
-    } while (unos != 0);
+    } while (isRunning);
 
     freeListu(head);
+
     return 0;
 }
